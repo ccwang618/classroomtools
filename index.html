@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧教室與考場計時首頁</title>
+    <style>
+        :root {
+            --bg: #f4f6f9;
+            --surface: #ffffff;
+            --ink: #162033;
+            --muted: #5d6b82;
+            --line: #d9e2ef;
+            --blue: #2563eb;
+            --green: #16815c;
+            --red: #c2413d;
+            --amber: #b7791f;
+            --shadow: 0 16px 40px rgba(20, 35, 60, 0.10);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
+            color: var(--ink);
+            background:
+                linear-gradient(180deg, rgba(244, 246, 249, 0.92), rgba(232, 238, 247, 0.96)),
+                repeating-linear-gradient(90deg, rgba(37, 99, 235, 0.05) 0 1px, transparent 1px 120px),
+                repeating-linear-gradient(0deg, rgba(22, 129, 92, 0.045) 0 1px, transparent 1px 72px);
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .page {
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 28px 0 36px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .mark {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: var(--ink);
+            color: #fff;
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+            letter-spacing: 0;
+            flex: 0 0 auto;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.5rem, 3vw, 2.2rem);
+            line-height: 1.2;
+            letter-spacing: 0;
+        }
+
+        .subtitle {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 0.98rem;
+        }
+
+        .clock-panel {
+            min-width: 210px;
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.84);
+            text-align: right;
+        }
+
+        .date {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .time {
+            margin-top: 2px;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 1.55rem;
+            font-weight: 800;
+            letter-spacing: 0;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1.35fr 0.65fr;
+            gap: 18px;
+            align-items: stretch;
+            margin-bottom: 18px;
+        }
+
+        .summary {
+            border-radius: 8px;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            padding: 22px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .metric {
+            min-height: 96px;
+            padding: 16px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fbfdff;
+        }
+
+        .metric strong {
+            display: block;
+            font-size: 2rem;
+            line-height: 1;
+            letter-spacing: 0;
+        }
+
+        .metric span {
+            display: block;
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .timeline-card {
+            border-radius: 8px;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            padding: 22px;
+            min-height: 100%;
+        }
+
+        .timeline-title {
+            margin: 0 0 14px;
+            font-size: 1rem;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .timeline {
+            display: grid;
+            gap: 12px;
+        }
+
+        .timeline-row {
+            display: grid;
+            grid-template-columns: 72px 1fr;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .timeline-row time {
+            color: var(--muted);
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 0.95rem;
+        }
+
+        .bar {
+            height: 12px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--blue), var(--green));
+        }
+
+        .bar.short {
+            width: 58%;
+            background: var(--amber);
+        }
+
+        .bar.long {
+            width: 86%;
+        }
+
+        .section-head {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 16px;
+            margin: 26px 0 12px;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            letter-spacing: 0;
+        }
+
+        .hint {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.94rem;
+            text-align: right;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .tool-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: 0 10px 28px rgba(20, 35, 60, 0.07);
+            padding: 18px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .tool-card.exam {
+            border-left: 6px solid var(--red);
+        }
+
+        .tool-card.classroom {
+            border-left: 6px solid var(--blue);
+        }
+
+        .tool-meta {
+            min-width: 0;
+        }
+
+        .tagline {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: #eef4ff;
+            color: #24437a;
+            font-size: 0.86rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .tag.exam-tag {
+            background: #fff1ef;
+            color: #8f2f2b;
+        }
+
+        .tool-card h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            letter-spacing: 0;
+        }
+
+        .tool-card p {
+            margin: 8px 0 0;
+            color: var(--muted);
+            line-height: 1.65;
+        }
+
+        .schedule-list {
+            margin: 14px 0 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 7px;
+        }
+
+        .schedule-list li {
+            display: grid;
+            grid-template-columns: 112px 1fr;
+            gap: 10px;
+            align-items: baseline;
+            color: #2c3a4f;
+            font-size: 0.94rem;
+        }
+
+        .schedule-list time {
+            color: var(--muted);
+            font-family: Consolas, "Courier New", monospace;
+            white-space: nowrap;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 126px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 0 14px;
+            border-radius: 8px;
+            border: 1px solid #1d4ed8;
+            background: var(--blue);
+            color: #fff;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .btn.secondary {
+            border-color: var(--line);
+            background: #fff;
+            color: var(--ink);
+        }
+
+        .btn.exam-btn {
+            border-color: #a8322e;
+            background: var(--red);
+        }
+
+        .btn:focus-visible,
+        .tool-card:focus-within {
+            outline: 3px solid rgba(37, 99, 235, 0.28);
+            outline-offset: 2px;
+        }
+
+        .note {
+            margin-top: 18px;
+            padding: 14px 16px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.76);
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        @media (max-width: 900px) {
+            .topbar,
+            .hero,
+            .section-head {
+                display: block;
+            }
+
+            .clock-panel {
+                margin-top: 14px;
+                text-align: left;
+            }
+
+            .summary {
+                grid-template-columns: 1fr;
+                margin-bottom: 16px;
+            }
+
+            .hint {
+                margin-top: 6px;
+                text-align: left;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 620px) {
+            .page {
+                width: min(100% - 20px, 1180px);
+                padding-top: 16px;
+            }
+
+            .brand {
+                align-items: flex-start;
+            }
+
+            .mark {
+                width: 42px;
+                height: 42px;
+            }
+
+            .tool-card {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                flex: 1 1 128px;
+            }
+
+            .schedule-list li {
+                grid-template-columns: 96px 1fr;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <div class="brand">
+                <div class="mark" aria-hidden="true">T</div>
+                <div>
+                    <h1>智慧教室與考場計時首頁</h1>
+                    <p class="subtitle">集中管理課表倒數、段考考程與各頁入口，適合投影、導覽與快速啟動。</p>
+                </div>
+            </div>
+            <section class="clock-panel" aria-label="目前日期與時間">
+                <div class="date" id="todayText">----/--/--</div>
+                <div class="time" id="clockText">--:--:--</div>
+            </section>
+        </header>
+
+        <section class="hero" aria-label="首頁摘要">
+            <div class="summary">
+                <div class="metric">
+                    <strong>4</strong>
+                    <span>教師課表倒數工具</span>
+                </div>
+                <div class="metric">
+                    <strong>1</strong>
+                    <span>段考考程倒數工具</span>
+                </div>
+                <div class="metric">
+                    <strong>0</strong>
+                    <span>外部套件依賴，雙擊即可使用</span>
+                </div>
+            </div>
+            <aside class="timeline-card">
+                <p class="timeline-title">常用日程視覺摘要</p>
+                <div class="timeline" aria-hidden="true">
+                    <div class="timeline-row">
+                        <time>08:25</time>
+                        <div class="bar long"></div>
+                    </div>
+                    <div class="timeline-row">
+                        <time>10:15</time>
+                        <div class="bar"></div>
+                    </div>
+                    <div class="timeline-row">
+                        <time>13:00</time>
+                        <div class="bar long"></div>
+                    </div>
+                    <div class="timeline-row">
+                        <time>16:10</time>
+                        <div class="bar short"></div>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <section class="section-head">
+            <h2>課表倒數工具</h2>
+            <p class="hint">每張卡片都會以同資料夾相對路徑開啟，支援本機 HTML 與 localhost。</p>
+        </section>
+
+        <section class="grid" aria-label="課表入口">
+            <article class="tool-card classroom">
+                <div class="tool-meta">
+                    <div class="tagline">
+                        <span class="tag">WY</span>
+                        <span class="tag">星期一</span>
+                    </div>
+                    <h3>WY 課表：星期一</h3>
+                    <p>生科課、班級人數、備註與下課提醒倒數。</p>
+                    <ul class="schedule-list">
+                        <li><time>08:25-09:10</time><span>第一節：自修</span></li>
+                        <li><time>09:20-11:55</time><span>生科 901、802、701</span></li>
+                        <li><time>13:00-15:40</time><span>第五節到第七節自修</span></li>
+                    </ul>
+                </div>
+                <div class="actions">
+                    <a class="btn" href="wy課表_星期一.html">開啟</a>
+                    <a class="btn secondary" href="wy課表_星期一.html" target="_blank" rel="noopener">新分頁</a>
+                </div>
+            </article>
+
+            <article class="tool-card classroom">
+                <div class="tool-meta">
+                    <div class="tagline">
+                        <span class="tag">WY</span>
+                        <span class="tag">星期二</span>
+                    </div>
+                    <h3>WY 課表：星期二</h3>
+                    <p>星期二生科課程與自修時段的即時倒數。</p>
+                    <ul class="schedule-list">
+                        <li><time>08:25-10:05</time><span>生科 702、801</span></li>
+                        <li><time>10:15-11:55</time><span>自修、生科 902</span></li>
+                        <li><time>13:00-15:40</time><span>第五節到第七節自修</span></li>
+                    </ul>
+                </div>
+                <div class="actions">
+                    <a class="btn" href="wy課表_星期二.html">開啟</a>
+                    <a class="btn secondary" href="wy課表_星期二.html" target="_blank" rel="noopener">新分頁</a>
+                </div>
+            </article>
+
+            <article class="tool-card classroom">
+                <div class="tool-meta">
+                    <div class="tagline">
+                        <span class="tag">JN</span>
+                        <span class="tag">星期五</span>
+                    </div>
+                    <h3>JN 課表：星期五</h3>
+                    <p>星期五生科班級課程與下午最後一節提醒。</p>
+                    <ul class="schedule-list">
+                        <li><time>08:25-11:00</time><span>生科 711、712、710</span></li>
+                        <li><time>11:10-14:40</time><span>第四節到第六節自修</span></li>
+                        <li><time>14:55-15:40</time><span>第七節：生科 713</span></li>
+                    </ul>
+                </div>
+                <div class="actions">
+                    <a class="btn" href="jn課表_星期五.html">開啟</a>
+                    <a class="btn secondary" href="jn課表_星期五.html" target="_blank" rel="noopener">新分頁</a>
+                </div>
+            </article>
+
+            <article class="tool-card classroom">
+                <div class="tool-meta">
+                    <div class="tagline">
+                        <span class="tag">ST</span>
+                        <span class="tag">星期四</span>
+                    </div>
+                    <h3>ST 課表：星期四</h3>
+                    <p>資科與生科混合課表，適合小班人數紀錄。</p>
+                    <ul class="schedule-list">
+                        <li><time>08:25-10:05</time><span>資科 8 甲、9 甲</span></li>
+                        <li><time>10:15-14:40</time><span>生科 9 甲、8 甲、7 甲</span></li>
+                        <li><time>14:55-15:40</time><span>第七節：自修</span></li>
+                    </ul>
+                </div>
+                <div class="actions">
+                    <a class="btn" href="st課表_星期四.html">開啟</a>
+                    <a class="btn secondary" href="st課表_星期四.html" target="_blank" rel="noopener">新分頁</a>
+                </div>
+            </article>
+        </section>
+
+        <section class="section-head">
+            <h2>段考考程工具</h2>
+            <p class="hint">考程頁保留原本可編輯、可倒數、可音效提醒的獨立功能。</p>
+        </section>
+
+        <section class="grid" aria-label="段考入口">
+            <article class="tool-card exam">
+                <div class="tool-meta">
+                    <div class="tagline">
+                        <span class="tag exam-tag">段考</span>
+                        <span class="tag exam-tag">6 科</span>
+                    </div>
+                    <h3>各科段考考程表</h3>
+                    <p>集中管理國文、英文、英聽、數學、自然、社會各科考程與缺考紀錄。</p>
+                    <ul class="schedule-list">
+                        <li><time>08:40-09:50</time><span>第一節：國文</span></li>
+                        <li><time>10:10-11:55</time><span>英文、英聽</span></li>
+                        <li><time>13:30-17:10</time><span>數學、自然、社會</span></li>
+                    </ul>
+                </div>
+                <div class="actions">
+                    <a class="btn exam-btn" href="各科段考考程表.html">開啟</a>
+                    <a class="btn secondary" href="各科段考考程表.html" target="_blank" rel="noopener">新分頁</a>
+                </div>
+            </article>
+        </section>
+
+        <p class="note">使用方式：將本頁與所有課表 HTML 放在同一個資料夾中，直接開啟 `index.html`，或在此資料夾用 localhost 伺服器開啟即可。各工具頁面的修改會依原本設計儲存在瀏覽器本機。</p>
+    </main>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, "0");
+            const d = String(now.getDate()).padStart(2, "0");
+            const weekday = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"][now.getDay()];
+
+            document.getElementById("todayText").textContent = `${y}/${m}/${d}　${weekday}`;
+            document.getElementById("clockText").textContent = now.toLocaleTimeString("zh-TW", { hour12: false });
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

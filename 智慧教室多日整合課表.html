@@ -109,24 +109,39 @@
         .status-urgent { background: #ffebee; color: var(--accent-color); animation: blink 1s infinite; }
         .status-ended { background: #f5f5f5; color: #9e9e9e; }
 
-        /* 這裡已修改為粉紅色底色 Bar */
         .row-running { background-color: #13de35; font-weight: bold; }
 
+        /* ===== 調整後的計時器區塊布局 ===== */
         .timer-section {
             display: flex;
             flex-direction: row;
-            justify-content: space-around;
+            justify-content: space-between;
             align-items: center;
             flex-grow: 1;
             width: 100%;
         }
-        #currentStatusText { font-size: 1.5rem; font-weight: bold; color: var(--active-blue); text-align: left; width: 45%; }
+        /* 左、中、右三個子區塊平分空間，寬度各佔 1/3 */
+        .timer-section-left, .timer-section-center, .timer-section-right {
+            flex: 1;
+        }
+        .timer-section-left {
+            text-align: left;
+        }
+        .timer-section-center {
+            text-align: center;
+        }
+        .timer-section-right {
+            text-align: right;
+        }
+
+        #currentStatusText { font-size: 1.5rem; font-weight: bold; color: var(--active-blue); }
         .timer-display {
             font-size: 4rem; 
             font-weight: 800;
             font-family: monospace;
             color: #243b53;
             line-height: 1;
+            display: inline-block; /* 確保置中對齊穩定 */
         }
         .timer-urgent { color: var(--accent-color); animation: blink 1s infinite; }
 
@@ -146,11 +161,18 @@
     <div style="display: flex; flex-direction: column; gap: 15px; height: 100%; overflow: hidden;">
         
         <div class="card" style="height: 18%;">
+            <!-- 重新調整結構後的計時看板 -->
             <div class="timer-section">
-                <div id="currentStatusText">系統初始化中...</div>
-                <div id="timer" class="timer-display">00:00:00</div>
-                <div style="font-size: 1.2rem; color: #486581; font-weight: bold;">
-                    現在時間：<span id="clock">00:00:00</span>
+                <div class="timer-section-left">
+                    <div id="currentStatusText">系統初始化中...</div>
+                </div>
+                <div class="timer-section-center">
+                    <div id="timer" class="timer-display">00:00:00</div>
+                </div>
+                <div class="timer-section-right">
+                    <div style="font-size: 1.2rem; color: #486581; font-weight: bold;">
+                        現在時間：<span id="clock">00:00:00</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -197,7 +219,6 @@
     </div>
 
     <script>
-        // 四個檔案的預設課表資料（已全面補齊為 1~7 節完整課表）
         const defaultLessonsByDay = {
             "1": [
                 { name: '第一節：自修(wy)', start: '08:30', end: '09:15', alertBefore: 5, totalNum: 20, presentNum: 20, note: '' },

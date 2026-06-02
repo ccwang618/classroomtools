@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>智慧教室上課時程系統 - 七節完整版</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --bg-color: #f0f4f8;
@@ -109,9 +110,9 @@
         .status-urgent { background: #ffebee; color: var(--accent-color); animation: blink 1s infinite; }
         .status-ended { background: #f5f5f5; color: #9e9e9e; }
 
-        .row-running { background-color: #13de35; font-weight: bold; }
+        .row-running { background-color: #e3f2fd; font-weight: bold; }
 
-        /* ===== 調整後的計時器區塊布局 ===== */
+        /* 置中看板樣式 */
         .timer-section {
             display: flex;
             flex-direction: row;
@@ -120,20 +121,22 @@
             flex-grow: 1;
             width: 100%;
         }
-        /* 左、中、右三個子區塊平分空間，寬度各佔 1/3 */
-        .timer-section-left, .timer-section-center, .timer-section-right {
-            flex: 1;
-        }
         .timer-section-left {
+            flex: 1;
             text-align: left;
         }
         .timer-section-center {
+            flex: 1;
             text-align: center;
         }
         .timer-section-right {
+            flex: 1;
             text-align: right;
+            font-size: 1.2rem;
+            color: #486581;
+            font-weight: bold;
         }
-
+        
         #currentStatusText { font-size: 1.5rem; font-weight: bold; color: var(--active-blue); }
         .timer-display {
             font-size: 4rem; 
@@ -141,7 +144,6 @@
             font-family: monospace;
             color: #243b53;
             line-height: 1;
-            display: inline-block; /* 確保置中對齊穩定 */
         }
         .timer-urgent { color: var(--accent-color); animation: blink 1s infinite; }
 
@@ -151,6 +153,7 @@
         .btn-audio { background: #ff9800; color: white; animation: pulse 2s infinite; }
         .btn-audio.active { background: #4caf50; animation: none; }
         .btn-clear { background: #d32f2f; color: white; font-size: 0.85rem; padding: 6px 12px; }
+        .btn-screenshot { background: #009688; color: white; } /* 新增存檔按鈕樣式 */
 
         @keyframes blink { 50% { opacity: 0.5; } }
         @keyframes pulse { 50% { opacity: 0.8; } }
@@ -158,10 +161,9 @@
 </head>
 <body>
 
-    <div style="display: flex; flex-direction: column; gap: 15px; height: 100%; overflow: hidden;">
+    <div id="captureArea" style="display: flex; flex-direction: column; gap: 15px; height: 100%; overflow: hidden;">
         
         <div class="card" style="height: 18%;">
-            <!-- 重新調整結構後的計時看板 -->
             <div class="timer-section">
                 <div class="timer-section-left">
                     <div id="currentStatusText">系統初始化中...</div>
@@ -170,9 +172,7 @@
                     <div id="timer" class="timer-display">00:00:00</div>
                 </div>
                 <div class="timer-section-right">
-                    <div style="font-size: 1.2rem; color: #486581; font-weight: bold;">
-                        現在時間：<span id="clock">00:00:00</span>
-                    </div>
+                    現在時間：<span id="clock">00:00:00</span>
                 </div>
             </div>
         </div>
@@ -184,11 +184,12 @@
                     <select id="dayOfWeekSelect" class="day-select" onchange="switchDay()">
                         <option value="1">星期一 (wy)</option>
                         <option value="2">星期二 (wy)</option>
-                        <option value="4">星期四 (st)</option>
+                        <option value="4">星期內 (st)</option>
                         <option value="5">星期五 (jn)</option>
                     </select>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="screenshotBtn" class="btn-screenshot" onclick="takeScreenshot()">📸 畫面存檔 (JPG)</button>
                     <button id="audioAuthBtn" class="btn-audio" onclick="enableAudio()">點此：啟用音效功能</button>
                     <button class="btn-clear" onclick="clearCurrentDayMemory()">⚠️ 重設當日課表</button>
                 </div>
@@ -219,6 +220,7 @@
     </div>
 
     <script>
+        // 預設四天份完整課表資料
         const defaultLessonsByDay = {
             "1": [
                 { name: '第一節：自修(wy)', start: '08:30', end: '09:15', alertBefore: 5, totalNum: 20, presentNum: 20, note: '' },
@@ -517,6 +519,36 @@
                 timerEl.className = "timer-display";
                 lastBeepMinute = -1;
             }
+        }
+
+        // 核心功能：畫面存檔 (截圖)
+        function takeScreenshot() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const filename = `class_${year}${month}${date}.jpg`;
+
+            // 設定要擷取的範圍為整個網頁 body
+            const element = document.body;
+
+            html2canvas(element, {
+                useCORS: true,
+                scale: 2, // 提高解析度至2倍，確保匯出照片文字清晰
+                backgroundColor: "#f0f4f8" // 設定存檔圖片的背景顏色
+            }).then(canvas => {
+                // 將 Canvas 轉換為 JPEG 格式格式，品質設定為 0.9
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+                
+                // 虛擬點擊下載連結
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = dataUrl;
+                link.click();
+            }).catch(err => {
+                console.error("網頁擷取失敗:", err);
+                alert("畫面存檔失敗，請確認您的瀏覽器支援 Canvas 或並未封鎖腳本。");
+            });
         }
     </script>
 </body>

@@ -2,16 +2,15 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>智慧考場段考考程倒數系統 - 整合版面配置</title>
+    <title>智慧教室上課時程系統 - 七節完整版</title>
     <style>
         :root {
-            --bg-color: #f4f6f9;
+            --bg-color: #f0f4f8;
             --card-bg: #ffffff;
-            --primary-color: #1a202c;
-            --accent-color: #e53e3e;
-            --active-blue: #3182ce;
-            --success-green: #38a169;
-            --warning-orange: #dd6b20;
+            --primary-color: #102a43;
+            --accent-color: #d32f2f;
+            --active-blue: #1976d2;
+            --success-green: #2e7d32;
         }
 
         /* FHD 滿版優化 */
@@ -23,15 +22,15 @@
             display: grid;
             grid-template-columns: 1fr;
             height: 100vh;
-            gap: 20px;
-            padding: 20px;
+            gap: 15px;
+            padding: 15px;
             box-sizing: border-box;
             overflow: hidden; 
         }
 
         .card {
             background: var(--card-bg);
-            padding: 20px;
+            padding: 15px 20px;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             display: flex;
@@ -56,41 +55,46 @@
         }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         
-        th { padding: 10px 5px; border-bottom: 2px solid #e2e8f0; text-align: center; font-size: 1rem; background: #f7fafc; color: #4a5568; }
+        th { padding: 8px 5px; border-bottom: 2px solid #ddd; text-align: center; font-size: 1rem; background: #fafafa; position: sticky; top: 0; z-index: 10; }
         
-        #lessonBody tr { height: 55px; box-sizing: border-box; }
-        td { padding: 4px 5px; border-bottom: 1px solid #edf2f7; text-align: center; font-size: 1rem; }
+        #lessonBody tr { height: 50px; box-sizing: border-box; }
+        td { padding: 3px 5px; border-bottom: 1px solid #eee; text-align: center; font-size: 0.95rem; }
         
-        /* 欄位寬度比例優化 */
-        .col-name { width: 160px; }
-        .col-time { width: 95px; }
-        .col-alert { width: 100px; }
-        .col-num { width: 85px; }
-        .col-note { width: 180px; }
-        .col-status { width: 100px; }
+        /* 欄位寬度比例 */
+        .col-name { width: 150px; }
+        .col-time { width: 85px; }
+        .col-alert { width: 85px; }
+        .col-num { width: 80px; }
+        .col-note { width: 160px; }
+        .col-status { width: 90px; }
         .col-action { width: 60px; }
 
-        input[type="text"], input[type="number"] {
+        input[type="text"], input[type="number"], select {
             width: 95%;
-            height: 36px;
-            padding: 0 6px;
-            border: 1px solid #cbd5e0;
-            border-radius: 6px;
+            height: 32px;
+            padding: 0 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             text-align: center;
             font-size: 0.95rem;
             box-sizing: border-box;
-            transition: all 0.2s;
         }
-        input[type="text"]:focus, input[type="number"]:focus {
-            border-color: var(--active-blue);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+
+        .day-select {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--active-blue);
+            border: 2px solid var(--active-blue);
+            background: white;
+            cursor: pointer;
+            width: 160px;
+            height: 38px;
         }
 
         .note-container {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
         }
         .absent-calc {
             font-size: 0.8rem;
@@ -98,80 +102,90 @@
             font-weight: bold;
         }
 
-        .status-badge { padding: 5px 0; display: block; border-radius: 20px; font-size: 0.9rem; font-weight: bold; }
-        .status-waiting { background: #edf2f7; color: #4a5568; }
-        .status-running { background: #c6f6d5; color: var(--success-green); animation: pulse 2s infinite; }
-        .status-urgent { background: #fed7d7; color: var(--accent-color); animation: blink 1s infinite; }
-        .status-ended { background: #e2e8f0; color: #718096; }
+        .status-badge { padding: 4px 0; display: block; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
+        .status-waiting { background: #e0e0e0; color: #616161; }
+        .status-running { background: #e8f5e9; color: var(--success-green); animation: pulse 2s infinite; }
+        .status-urgent { background: #ffebee; color: var(--accent-color); animation: blink 1s infinite; }
+        .status-ended { background: #f5f5f5; color: #9e9e9e; }
 
-        .row-running { background-color: #ebf8ff; font-weight: bold; }
+        /* 這裡已修改為粉紅色底色 Bar */
+        .row-running { background-color: #13de35; font-weight: bold; }
 
+        /* 倒數計時上方置中區塊優化 */
         .timer-section {
             display: flex;
-            flex-direction: row;
-            justify-content: space-around;
+            flex-direction: column;
+            justify-content: center;
             align-items: center;
             flex-grow: 1;
             width: 100%;
+            gap: 8px;
         }
-        #currentStatusText { font-size: 1.6rem; font-weight: bold; color: var(--active-blue); text-align: left; width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #currentStatusText { font-size: 1.4rem; font-weight: bold; color: var(--active-blue); text-align: center; width: 100%; }
         .timer-display {
-            font-size: 4.8rem; 
+            font-size: 4.5rem; 
             font-weight: 800;
-            font-family: monospace, 'Courier New', Courier;
-            color: #2d3748;
+            font-family: monospace;
+            color: #243b53;
             line-height: 1;
+            text-align: center;
         }
         .timer-urgent { color: var(--accent-color); animation: blink 1s infinite; }
 
-        button { cursor: pointer; border: none; border-radius: 6px; padding: 8px 16px; font-weight: bold; font-size: 0.95rem; transition: background 0.2s; }
-        .btn-add { background: var(--active-blue); color: white; margin-bottom: 10px; align-self: flex-start; flex-shrink: 0; }
-        .btn-add:hover { background: #2b6cb0; }
-        .btn-del { background: #e53e3e; color: white; height: 34px; padding: 0; width: 100%; border-radius: 6px; }
-        .btn-del:hover { background: #c53030; }
-        .btn-audio { background: var(--warning-orange); color: white; animation: pulse 2s infinite; }
-        .btn-audio:hover { background: #dd6b20; }
-        .btn-audio.active { background: var(--success-green); animation: none; }
-        .btn-clear { background: #718096; color: white; font-size: 0.85rem; padding: 6px 12px; }
-        .btn-clear:hover { background: #4a5568; }
+        button { cursor: pointer; border: none; border-radius: 6px; padding: 8px 15px; font-weight: bold; font-size: 0.95rem; }
+        .btn-add { background: var(--active-blue); color: white; margin-bottom: 8px; align-self: flex-start; flex-shrink: 0; }
+        .btn-del { background: #ff5252; color: white; height: 30px; padding: 0; width: 100%; }
+        .btn-audio { background: #ff9800; color: white; animation: pulse 2s infinite; }
+        .btn-audio.active { background: #4caf50; animation: none; }
+        .btn-clear { background: #d32f2f; color: white; font-size: 0.85rem; padding: 6px 12px; }
 
-        @keyframes blink { 50% { opacity: 0.4; } }
-        @keyframes pulse { 50% { opacity: 0.7; } }
+        @keyframes blink { 50% { opacity: 0.5; } }
+        @keyframes pulse { 50% { opacity: 0.8; } }
     </style>
 </head>
 <body>
 
-    <div style="display: flex; flex-direction: column; gap: 20px; height: 100%; overflow: hidden;">
+    <div style="display: flex; flex-direction: column; gap: 15px; height: 100%; overflow: hidden;">
         
-        <!-- 上方：主倒數與狀態看板 -->
-        <div class="card" style="height: 18%;">
+        <!-- 上方倒數計時區塊調整為 22% 確保置中空間足夠 -->
+        <div class="card" style="height: 22%;">
             <div class="timer-section">
                 <div id="currentStatusText">系統初始化中...</div>
                 <div id="timer" class="timer-display">00:00:00</div>
-                <div style="font-size: 1.3rem; color: #4a5568; font-weight: bold;">
+                <div style="font-size: 1.1rem; color: #486581; font-weight: bold; text-align: center;">
                     現在時間：<span id="clock">00:00:00</span>
                 </div>
             </div>
         </div>
 
-        <!-- 下方：考程表管理與設定 -->
-        <div class="card" style="height: 79%;">
+        <!-- 下方課表區域調整為 76% -->
+        <div class="card" style="height: 76%;">
             <div class="header-box">
-                <h2 id="systemTitle">段考各科考程時間軸設定 (24小時制) - 今日日期：----/--/--</h2>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h2 id="systemTitle">智慧教室_課表系統</h2>
+                    <select id="dayOfWeekSelect" class="day-select" onchange="switchDay()">
+                        <option value="1">星期一 (wy)</option>
+                        <option value="2">星期二 (wy)</option>
+                        <option value="4">星期四 (st)</option>
+                        <option value="5">星期五 (jn)</option>
+                    </select>
+                </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                    <button id="audioAuthBtn" class="btn-audio" onclick="enableAudio()">點此：啟用考場音效</button>
-                    <button class="btn-clear" onclick="clearSystemMemory()">⚠️ 重設預設考程</button>
+                    <button id="audioAuthBtn" class="btn-audio" onclick="enableAudio()">點此：啟用音效功能</button>
+                    <button class="btn-clear" onclick="clearCurrentDayMemory()">⚠️ 重設當日課表</button>
                 </div>
             </div>
-            <button class="btn-add" onclick="addRow()">+ 新增自訂考程</button>
+            
+            <button class="btn-add" onclick="addRow()">+ 新增自訂時段</button>
+            
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th class="col-name">考試科目 / 班級</th>
+                            <th class="col-name">節次與科目名稱</th>
                             <th class="col-time">開始時間</th>
                             <th class="col-time">結束時間</th>
-                            <th class="col-alert">結束前提醒(分)</th>
+                            <th class="col-alert">提醒(分)</th>
                             <th class="col-num">應到人數</th>
                             <th class="col-num">實到人數</th>
                             <th class="col-note">備註 / 缺席座號</th>
@@ -187,223 +201,272 @@
     </div>
 
     <script>
-        // 預設段考科別考程（配合使用者修改：移除原第七節，並將第六節設定為第五節下課10分鐘後開始）
-        let lessons = JSON.parse(localStorage.getItem('exam_lessons_2026_v3')) || [
-            { name: '第一節：國文', start: '08:40', end: '09:50', alertBefore: 5, totalNum: 30, presentNum: 30, note: '' },
-            { name: '第二節：英文', start: '10:10', end: '11:10', alertBefore: 5, totalNum: 30, presentNum: 30, note: '' },
-            { name: '第三節：英聽', start: '11:30', end: '11:55', alertBefore: 5, totalNum: 30, presentNum: 30, note: '播放播音系統' },
-            { name: '第四節：數學', start: '13:30', end: '14:40', alertBefore: 5, totalNum: 30, presentNum: 30, note: '' },
-            { name: '第五節：自然', start: '15:00', end: '16:00', alertBefore: 5, totalNum: 30, presentNum: 30, note: '' },
-            { name: '第六節：社會', start: '16:10', end: '17:10', alertBefore: 5, totalNum: 30, presentNum: 30, note: '延續第五節結束10分後' }
-        ];
+        // 四個檔案的預設課表資料（已全面補齊為 1~7 節完整課表）
+        const defaultLessonsByDay = {
+            "1": [
+                { name: '第一節：自修(wy)', start: '08:30', end: '09:15', alertBefore: 5, totalNum: 20, presentNum: 20, note: '' },
+                { name: '第二節：生科_901(wy)', start: '09:25', end: '10:10', alertBefore: 5, totalNum: 18, presentNum: 18, note: '' },
+                { name: '第三節：生科_701(wy)', start: '10:20', end: '11:05', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
+                { name: '第四節：生科_802(wy)', start: '11:15', end: '12:00', alertBefore: 5, totalNum: 23, presentNum: 23, note: '' },
+                { name: '第五節：自修(wy)', start: '13:00', end: '13:45', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
+                { name: '第六節：自修(wy)', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
+                { name: '第七節：自修(wy)', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' }
+            ],
+            "2": [
+                { name: '第一節：生科_702(wy)', start: '08:30', end: '09:15', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
+                { name: '第二節：生科_801(wy)', start: '09:25', end: '10:10', alertBefore: 5, totalNum: 23, presentNum: 23, note: '' },
+                { name: '第三節：自修(wy)', start: '10:20', end: '11:05', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
+                { name: '第四節：生科_902(wy)', start: '11:15', end: '12:00', alertBefore: 5, totalNum: 19, presentNum: 19, note: '' },
+                { name: '第五節：自修(wy)', start: '13:00', end: '13:45', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
+                { name: '第六節：自修(wy)', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
+                { name: '第七節：自修(wy)', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' }
+            ],
+            "4": [
+                { name: '第一節：資科_8甲(st)', start: '08:25', end: '09:10', alertBefore: 5, totalNum: 14, presentNum: 14, note: '' },
+                { name: '第二節：資科_9甲(st)', start: '09:20', end: '10:05', alertBefore: 5, totalNum: 7, presentNum: 7, note: '' },
+                { name: '第三節：生科_9甲(st)', start: '10:15', end: '11:00', alertBefore: 5, totalNum: 7, presentNum: 7, note: '' },
+                { name: '第四節：資科_7甲(st)', start: '11:10', end: '11:55', alertBefore: 5, totalNum: 3, presentNum: 3, note: '' },
+                { name: '第五節：生科_8甲(st)', start: '13:00', end: '13:45', alertBefore: 5, totalNum: 14, presentNum: 14, note: '' },
+                { name: '第六節：生科_7甲(st)', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 3, presentNum: 3, note: '' },
+                { name: '第七節：自修', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 14, presentNum: 14, note: '' }
+            ],
+            "5": [
+                { name: '第一節：生科_711(jn)', start: '08:25', end: '09:10', alertBefore: 5, totalNum: 29, presentNum: 29, note: '' },
+                { name: '第二節：生科_712(jn)', start: '09:20', end: '10:05', alertBefore: 5, totalNum: 28, presentNum: 28, note: '' },
+                { name: '第三節：生科_710(jn)', start: '10:15', end: '11:00', alertBefore: 5, totalNum: 29, presentNum: 29, note: '' },
+                { name: '第四節：自修', start: '11:10', end: '11:55', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
+                { name: '第五節：自修', start: '13:00', end: '13:45', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
+                { name: '第六節：自修', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
+                { name: '第七節：生科_713(jn)', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 28, presentNum: 28, note: '' }
+            ]
+        };
 
+        let currentDay = "1"; 
+        let lessons = [];
         let audioCtx = null;
+        let isAudioEnabled = false;
         let lastBeepMinute = -1;
 
-        function init() {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const date = String(today.getDate()).padStart(2, '0');
-            document.getElementById('systemTitle').innerText = `段考各科考程時間軸設定 (24小時制) - 今日日期：${year}/${month}/${date}`;
+        window.onload = function() {
+            determineToday();
+            loadDayLesson(currentDay);
+            setInterval(updateSystem, 500);
+        };
 
-            renderLessons();
-            updateSystem();
-            setInterval(updateSystem, 1000);
+        function determineToday() {
+            const now = new Date();
+            const day = now.getDay().toString();
+            if (defaultLessonsByDay[day]) {
+                currentDay = day;
+            } else {
+                currentDay = "1"; 
+            }
+            document.getElementById('dayOfWeekSelect').value = currentDay;
         }
 
-        function clearSystemMemory() {
-            if (confirm("確定要清除瀏覽器記憶體並重設考程表嗎？\n這將會還原至系統最新的 6 科考程設定。")) {
-                localStorage.removeItem('exam_lessons_2026_v3');
-                location.reload();    
+        function loadDayLesson(day) {
+            currentDay = day;
+            const storageKey = `multi_lessons_v7_day_${currentDay}`;
+            lessons = JSON.parse(localStorage.getItem(storageKey));
+            
+            if (!lessons || lessons.length === 0) {
+                lessons = JSON.parse(JSON.stringify(defaultLessonsByDay[currentDay]));
             }
+            renderTable();
+        }
+
+        function switchDay() {
+            const select = document.getElementById('dayOfWeekSelect');
+            saveCurrentDayData(); 
+            loadDayLesson(select.value);
+            lastBeepMinute = -1; 
+        }
+
+        function saveCurrentDayData() {
+            const storageKey = `multi_lessons_v7_day_${currentDay}`;
+            localStorage.setItem(storageKey, JSON.stringify(lessons));
+        }
+
+        function clearCurrentDayMemory() {
+            if (confirm(`確定要將 星期${getDayName(currentDay)} 的七節課表回復到最初預設值嗎？`)) {
+                const storageKey = `multi_lessons_v7_day_${currentDay}`;
+                localStorage.removeItem(storageKey);
+                loadDayLesson(currentDay);
+            }
+        }
+
+        function getDayName(dayStr) {
+            const mapping = {"1":"一", "2":"二", "4":"四", "5":"五"};
+            return mapping[dayStr] || dayStr;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('lessonBody');
+            tbody.innerHTML = '';
+
+            lessons.forEach((lesson, index) => {
+                const tr = document.createElement('tr');
+                tr.id = `row-${index}`;
+                const absentCount = Math.max(0, lesson.totalNum - lesson.presentNum);
+                const absentDisplay = absentCount > 0 ? ` (缺 ${absentCount} 人)` : '';
+
+                tr.innerHTML = `
+                    <td><input type="text" value="${lesson.name}" onchange="updateData(${index}, 'name', this.value)"></td>
+                    <td><input type="text" value="${lesson.start}" onchange="updateData(${index}, 'start', this.value)"></td>
+                    <td><input type="text" value="${lesson.end}" onchange="updateData(${index}, 'end', this.value)"></td>
+                    <td><input type="number" value="${lesson.alertBefore}" onchange="updateData(${index}, 'alertBefore', parseInt(this.value)||0)"></td>
+                    <td><input type="number" value="${lesson.totalNum}" onchange="updateData(${index}, 'totalNum', parseInt(this.value)||0)"></td>
+                    <td><input type="number" value="${lesson.presentNum}" onchange="updateData(${index}, 'presentNum', parseInt(this.value)||0)"></td>
+                    <td>
+                        <div class="note-container">
+                            <input type="text" placeholder="輸入備註或缺席座號" value="${lesson.note || ''}" onchange="updateData(${index}, 'note', this.value)">
+                            <div class="absent-calc" id="absent-calc-${index}">${absentDisplay}</div>
+                        </div>
+                    </td>
+                    <td><span id="status-${index}" class="status-badge status-waiting">未開始</span></td>
+                    <td><button class="btn-del" onclick="deleteRow(${index})">刪除</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateData(index, field, value) {
+            lessons[index][field] = value;
+            if (field === 'totalNum' || field === 'presentNum') {
+                const total = parseInt(lessons[index].totalNum) || 0;
+                const present = parseInt(lessons[index].presentNum) || 0;
+                const absent = Math.max(0, total - present);
+                const el = document.getElementById(`absent-calc-${index}`);
+                if (el) el.innerText = absent > 0 ? ` (缺 ${absent} 人)` : '';
+            }
+            saveCurrentDayData();
+        }
+
+        function addRow() {
+            lessons.push({ name: '新自訂時段', start: '16:00', end: '16:45', alertBefore: 5, totalNum: 20, presentNum: 20, note: '' });
+            renderTable();
+            saveCurrentDayData();
+        }
+
+        function deleteRow(index) {
+            lessons.splice(index, 1);
+            renderTable();
+            saveCurrentDayData();
         }
 
         function enableAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
+            isAudioEnabled = true;
             const btn = document.getElementById('audioAuthBtn');
-            btn.innerText = "🔊 考場音效已就緒";
+            btn.innerText = "🔊 音效功能已啟用";
             btn.className = "btn-audio active";
-            playBeep(440, 0.1); 
         }
 
-        function playBeep(frequency = 600, duration = 0.3) {
-            if (!audioCtx) return;
+        function playBeep(frequency, duration) {
+            if (!isAudioEnabled || !audioCtx) return;
             try {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
                 osc.frequency.value = frequency;
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime); 
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start();
                 osc.stop(audioCtx.currentTime + duration);
-            } catch(e) { console.error("音效播放失敗", e); }
+            } catch (e) { console.error(e); }
         }
 
         function triggerReminderSound() {
-            let count = 0;
-            const interval = setInterval(() => {
-                if (count < 5) {
-                    playBeep(700, 0.12);
-                    count++;
-                } else {
-                    clearInterval(interval);
-                }
-            }, 250);
-        }
-
-        function triggerEndSound() {
-            let pair = 0;
-            const interval = setInterval(() => {
-                if (pair < 3) {
-                    playBeep(880, 0.25);
-                    setTimeout(() => playBeep(660, 0.35), 300);
-                    pair++;
-                } else {
-                    clearInterval(interval);
-                }
-            }, 800);
-        }
-
-        function renderLessons() {
-            const tbody = document.getElementById('lessonBody');
-            tbody.innerHTML = '';
-            lessons.forEach((les, index) => {
-                const tr = document.createElement('tr');
-                tr.id = `row-${index}`;
-                
-                const total = les.totalNum ?? 30;
-                const present = les.presentNum ?? 30;
-                const absent = Math.max(0, total - present);
-                const absentText = absent > 0 ? `(缺考 ${absent})` : '';
-
-                tr.innerHTML = `
-                    <td><input type="text" value="${les.name}" onchange="updateData(${index}, 'name', this.value)"></td>
-                    <td><input type="text" value="${les.start}" placeholder="08:40" onchange="updateData(${index}, 'start', this.value)"></td>
-                    <td><input type="text" value="${les.end}" placeholder="09:50" onchange="updateData(${index}, 'end', this.value)"></td>
-                    <td><input type="number" value="${les.alertBefore}" min="1" max="60" onchange="updateData(${index}, 'alertBefore', this.value)"></td>
-                    <td><input type="number" value="${total}" min="0" onchange="updateData(${index}, 'totalNum', this.value)"></td>
-                    <td><input type="number" value="${present}" min="0" onchange="updateData(${index}, 'presentNum', this.value)"></td>
-                    <td>
-                        <div class="note-container">
-                            <input type="text" value="${les.note ?? ''}" placeholder="輸入備註/缺席座號" onchange="updateData(${index}, 'note', this.value)">
-                            <span class="absent-calc" id="absent-calc-${index}">${absentText}</span>
-                        </div>
-                    </td>
-                    <td><span id="status-${index}" class="status-badge status-waiting">準備中</span></td>
-                    <td><button class="btn-del" onclick="deleteRow(${index})">刪除</button></td>
-                `;
-                tbody.appendChild(tr);
-            });
-            saveData();
-        }
-
-        function addRow() {
-            lessons.push({ name: '新考科', start: '17:20', end: '18:20', alertBefore: 5, totalNum: 30, presentNum: 30, note: '' });
-            renderLessons();
-        }
-
-        function deleteRow(index) {
-            if (confirm(`確定要刪除「${lessons[index].name}」的考程嗎？`)) {
-                lessons.splice(index, 1);
-                renderLessons();
-            }
-        }
-
-        function updateData(index, key, value) {
-            if (key === 'alertBefore' || key === 'totalNum' || key === 'presentNum') {
-                lessons[index][key] = parseInt(value) >= 0 ? parseInt(value) : 0;
-            } else {
-                lessons[index][key] = value.trim();
-            }
-            
-            if (key === 'totalNum' || key === 'presentNum') {
-                const total = lessons[index].totalNum;
-                const present = lessons[index].presentNum;
-                const absent = Math.max(0, total - present);
-                document.getElementById(`absent-calc-${index}`).innerText = absent > 0 ? `(缺考 ${absent})` : '';
-            }
-
-            saveData();
-        }
-
-        function saveData() {
-            localStorage.setItem('exam_lessons_2026_v3', JSON.stringify(lessons));
+            playBeep(987.77, 0.2); 
+            setTimeout(() => playBeep(1318.51, 0.4), 200); 
         }
 
         function timeToDate(timeStr) {
-            const [hours, minutes] = timeStr.split(':').map(Number);
+            const [h, m] = timeStr.split(':').map(Number);
             const d = new Date();
-            d.setHours(hours, minutes, 0, 0);
+            d.setHours(h, m, 0, 0);
             return d;
         }
 
-        function formatTimeLeft(seconds) {
-            const h = Math.floor(seconds / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            const s = seconds % 60;
-            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        function formatTimeLeft(sec) {
+            if (sec <= 0) return "00:00:00";
+            const h = Math.floor(sec / 3600).toString().padStart(2, '0');
+            const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+            const s = (sec % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
         }
 
         function updateSystem() {
             const now = new Date();
-            const currentMinute = now.getMinutes();
             document.getElementById('clock').innerText = now.toLocaleTimeString('zh-TW', { hour12: false });
+            
+            const statusTextEl = document.getElementById('currentStatusText');
+            const timerEl = document.getElementById('timer');
 
+            let currentLesson = null;
             let currentLessonIndex = -1;
             let nextLessonIndex = -1;
-            let isUrgentPeriod = false;
 
-            lessons.forEach((les, index) => {
-                const startTime = timeToDate(les.start);
-                const endTime = timeToDate(les.end);
-                const statusBadge = document.getElementById(`status-${index}`);
-                const row = document.getElementById(`row-${index}`);
+            const sorted = lessons.map((l, idx) => ({
+                idx,
+                start: timeToDate(l.start),
+                end: timeToDate(l.end)
+            })).sort((a, b) => a.start - b.start);
 
-                if (!statusBadge || !row) return;
+            for (let i = 0; i < sorted.length; i++) {
+                if (now >= sorted[i].start && now <= sorted[i].end) {
+                    currentLessonIndex = sorted[i].idx;
+                    currentLesson = lessons[currentLessonIndex];
+                    break;
+                }
+                if (now < sorted[i].start) {
+                    nextLessonIndex = sorted[i].idx;
+                    break;
+                }
+            }
 
-                const alertThresholdSec = (les.alertBefore || 0) * 60;
+            lessons.forEach((lesson, idx) => {
+                const rowEl = document.getElementById(`row-${idx}`);
+                const badgeEl = document.getElementById(`status-${idx}`);
+                if (!badgeEl) return;
 
-                if (now < startTime) {
-                    statusBadge.innerText = "準備中";
-                    statusBadge.className = "status-badge status-waiting";
-                    row.className = "";
-                    if (nextLessonIndex === -1) nextLessonIndex = index;
-                } else if (now >= startTime && now <= endTime) {
-                    currentLessonIndex = index;
-                    row.className = "row-running";
+                const start = timeToDate(lesson.start);
+                const end = timeToDate(lesson.end);
+                const urgentStart = new Date(end.getTime() - lesson.alertBefore * 60 * 1000);
 
-                    const remainingSec = Math.ceil((endTime - now) / 1000);
-                    if (remainingSec <= alertThresholdSec && remainingSec > 0) {
-                        statusBadge.innerText = "即將結束";
-                        statusBadge.className = "status-badge status-urgent";
-                        isUrgentPeriod = true;
+                if (now >= start && now <= end) {
+                    rowEl.className = "row-running";
+                    if (now >= urgentStart) {
+                        badgeEl.innerText = "即將下課";
+                        badgeEl.className = "status-badge status-urgent";
                     } else {
-                        statusBadge.innerText = "考試中";
-                        statusBadge.className = "status-badge status-running";
+                        badgeEl.innerText = "上課中";
+                        badgeEl.className = "status-badge status-running";
                     }
+                } else if (now > end) {
+                    rowEl.className = "";
+                    badgeEl.innerText = "已結束";
+                    badgeEl.className = "status-badge status-ended";
                 } else {
-                    statusBadge.innerText = "已結束";
-                    statusBadge.className = "status-badge status-ended";
-                    row.className = "";
+                    rowEl.className = "";
+                    badgeEl.innerText = "未開始";
+                    badgeEl.className = "status-badge status-waiting";
                 }
             });
 
-            const timerEl = document.getElementById('timer');
-            const statusTextEl = document.getElementById('currentStatusText');
-
             if (currentLessonIndex !== -1) {
-                const currentLesson = lessons[currentLessonIndex];
-                const endTime = timeToDate(currentLesson.end);
-                const diffSec = Math.ceil((endTime - now) / 1000);
+                const end = timeToDate(currentLesson.end);
+                const diffSec = Math.ceil((end - now) / 1000);
+                const isUrgentPeriod = now >= new Date(end.getTime() - currentLesson.alertBefore * 60 * 1000);
+                const currentMinute = now.getMinutes();
 
-                statusTextEl.innerText = `✍️ 考試正進行：${currentLesson.name}`;
+                statusTextEl.innerText = `📖 正在進行：${currentLesson.name}`;
                 statusTextEl.style.color = isUrgentPeriod ? "var(--accent-color)" : "var(--success-green)";
+                
                 timerEl.innerText = formatTimeLeft(diffSec);
                 timerEl.className = isUrgentPeriod ? "timer-display timer-urgent" : "timer-display";
 
@@ -413,9 +476,10 @@
                 }
 
                 if (diffSec === 0) {
-                    triggerEndSound();
-                    statusTextEl.innerText = `📢 【${currentLesson.name}】考試時間到！請監考老師清點試卷`;
-                    statusTextEl.style.color = "var(--accent-color)";
+                    playBeep(800, 0.5);
+                    setTimeout(() => playBeep(800, 0.5), 600);
+                    setTimeout(() => playBeep(800, 0.8), 1200);
+                    alert(`${currentLesson.name} 時間到！`);
                 }
 
             } else if (nextLessonIndex !== -1) {
@@ -423,21 +487,20 @@
                 const startTime = timeToDate(nextLesson.start);
                 const diffSec = Math.ceil((startTime - now) / 1000);
 
-                statusTextEl.innerText = `☕ 考場休息（距離 ${nextLesson.name} 還有）`;
+                statusTextEl.innerText = `☕ 下堂預告（距離 ${nextLesson.name} 還有）`;
                 statusTextEl.style.color = "var(--active-blue)";
                 timerEl.innerText = formatTimeLeft(diffSec);
                 timerEl.className = "timer-display";
                 lastBeepMinute = -1;
 
             } else {
-                statusTextEl.innerText = "🎉 本日考程已全部結束！";
+                statusTextEl.innerText = "🎉 今日所有課程與時段已結束！";
                 statusTextEl.style.color = "#546e7a";
                 timerEl.innerText = "00:00:00";
                 timerEl.className = "timer-display";
+                lastBeepMinute = -1;
             }
         }
-
-        window.onload = init;
     </script>
 </body>
 </html>

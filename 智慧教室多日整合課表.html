@@ -65,6 +65,7 @@
         .col-time { width: 85px; }
         .col-alert { width: 85px; }
         .col-num { width: 80px; }
+        .col-num { width: 80px; }
         .col-note { width: 160px; }
         .col-status { width: 90px; }
         .col-action { width: 60px; }
@@ -108,7 +109,8 @@
         .status-urgent { background: #ffebee; color: var(--accent-color); animation: blink 1s infinite; }
         .status-ended { background: #f5f5f5; color: #9e9e9e; }
 
-        .row-running { background-color: #e3f2fd; font-weight: bold; }
+        /* 這裡已修改為粉紅色底色 Bar */
+        .row-running { background-color: #13de35; font-weight: bold; }
 
         .timer-section {
             display: flex;
@@ -156,7 +158,7 @@
         <div class="card" style="height: 80%;">
             <div class="header-box">
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <h2 id="systemTitle">智慧教室七節制課表系統</h2>
+                    <h2 id="systemTitle">智慧教室_課表系統</h2>
                     <select id="dayOfWeekSelect" class="day-select" onchange="switchDay()">
                         <option value="1">星期一 (wy)</option>
                         <option value="2">星期二 (wy)</option>
@@ -188,7 +190,7 @@
                         </tr>
                     </thead>
                     <tbody id="lessonBody">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -207,7 +209,7 @@
                 { name: '第七節：自修(wy)', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' }
             ],
             "2": [
-                { name: '第一節：生科_702(wy)', start: '08:30', end: '09:15', alertBefore: 5, totalNum: 23, presentNum: 23, note: '' },
+                { name: '第一節：生科_702(wy)', start: '08:30', end: '09:15', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
                 { name: '第二節：生科_801(wy)', start: '09:25', end: '10:10', alertBefore: 5, totalNum: 23, presentNum: 23, note: '' },
                 { name: '第三節：自修(wy)', start: '10:20', end: '11:05', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
                 { name: '第四節：生科_902(wy)', start: '11:15', end: '12:00', alertBefore: 5, totalNum: 19, presentNum: 19, note: '' },
@@ -221,7 +223,7 @@
                 { name: '第三節：生科_9甲(st)', start: '10:15', end: '11:00', alertBefore: 5, totalNum: 7, presentNum: 7, note: '' },
                 { name: '第四節：資科_7甲(st)', start: '11:10', end: '11:55', alertBefore: 5, totalNum: 3, presentNum: 3, note: '' },
                 { name: '第五節：生科_8甲(st)', start: '13:00', end: '13:45', alertBefore: 5, totalNum: 14, presentNum: 14, note: '' },
-                { name: '第六節：自修', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 14, presentNum: 14, note: '' },
+                { name: '第六節：生科_7甲(st)', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 3, presentNum: 3, note: '' },
                 { name: '第七節：自修', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 14, presentNum: 14, note: '' }
             ],
             "5": [

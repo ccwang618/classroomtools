@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>智慧考場段考考程倒數系統 - 整合版面配置</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --bg-color: #f4f6f9;
@@ -12,6 +13,7 @@
             --active-blue: #3182ce;
             --success-green: #38a169;
             --warning-orange: #dd6b20;
+            --screenshot-teal: #2bc4b6; /* 畫面存檔按鈕專用色 */
         }
 
         /* FHD 滿版優化 */
@@ -104,45 +106,57 @@
         .status-urgent { background: #fed7d7; color: var(--accent-color); animation: blink 1s infinite; }
         .status-ended { background: #e2e8f0; color: #718096; }
 
-        .row-running { background-color: #f7fafc; font-weight: bold; } /* 修正：將亮桃紅色改為柔和高亮，避免影響考場閱讀 */
+        .row-running { background-color: #f7fafc; font-weight: bold; } 
 
-        /* ---------------- [ 調整重點區塊 ] ---------------- */
+        /* ---------------- [ 倒數計時器精準置中 CSS 調整 ] ---------------- */
         .timer-section {
             display: flex;
             flex-direction: row;
-            justify-content: space-between; /* 改為兩端對齊，讓 flex:1 正常發揮 */
+            justify-content: space-between; /* 兩端分配空間 */
             align-items: center;
             flex-grow: 1;
             width: 100%;
         }
         
+        .timer-section-left {
+            flex: 1;                       /* 佔用左側 1/3 空間 */
+            text-align: left;
+        }
+        
         #currentStatusText { 
-            flex: 1;               /* 均分空間 */
             font-size: 1.6rem; 
             font-weight: bold; 
             color: var(--active-blue); 
-            text-align: left;      /* 文字靠左 */
+            display: inline-block;
+            max-width: 95%;
             overflow: hidden; 
             text-overflow: ellipsis; 
             white-space: nowrap; 
         }
+
+        .timer-section-center {
+            flex: 1;                       /* 佔用中間 1/3 空間 */
+            text-align: center;            /* 強制內容在 1/3 的正中央對齊 */
+        }
         
         .timer-display {
-            flex: 1;               /* 均分空間 */
             font-size: 4.8rem; 
             font-weight: 800;
             font-family: monospace, 'Courier New', Courier;
             color: #2d3748;
             line-height: 1;
-            text-align: center;    /* 關鍵：強制讓倒數計時居中 */
+            display: inline-block;
+        }
+
+        .timer-section-right {
+            flex: 1;                       /* 佔用右側 1/3 空間 */
+            text-align: right;
         }
         
         .clock-display {
-            flex: 1;               /* 均分空間 */
             font-size: 1.3rem; 
             color: #4a5568; 
             font-weight: bold;
-            text-align: right;     /* 現在時間靠右 */
         }
         /* ------------------------------------------------ */
 
@@ -156,6 +170,8 @@
         .btn-audio { background: var(--warning-orange); color: white; animation: pulse 2s infinite; }
         .btn-audio:hover { background: #dd6b20; }
         .btn-audio.active { background: var(--success-green); animation: none; }
+        .btn-screenshot { background: var(--screenshot-teal); color: white; } /* 畫面存檔按鈕樣式 */
+        .btn-screenshot:hover { background: #23a69a; }
         .btn-clear { background: #718096; color: white; font-size: 0.85rem; padding: 6px 12px; }
         .btn-clear:hover { background: #4a5568; }
 
@@ -165,24 +181,29 @@
 </head>
 <body>
 
-    <div style="display: flex; flex-direction: column; gap: 20px; height: 100%; overflow: hidden;">
+    <div id="captureArea" style="display: flex; flex-direction: column; gap: 20px; height: 100%; overflow: hidden; background: var(--bg-color); padding: 5px;">
         
-        <!-- 上方：主倒數與狀態看板 -->
         <div class="card" style="height: 18%;">
             <div class="timer-section">
-                <div id="currentStatusText">系統初始化中...</div>
-                <div id="timer" class="timer-display">00:00:00</div>
-                <div class="clock-display">
-                    現在時間：<span id="clock">00:00:00</span>
+                <div class="timer-section-left">
+                    <div id="currentStatusText">系統初始化中...</div>
+                </div>
+                <div class="timer-section-center">
+                    <div id="timer" class="timer-display">00:00:00</div>
+                </div>
+                <div class="timer-section-right">
+                    <div class="clock-display">
+                        現在時間：<span id="clock">00:00:00</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- 下方：考程表管理與設定 -->
         <div class="card" style="height: 79%;">
             <div class="header-box">
                 <h2 id="systemTitle">段考各科考程時間軸設定 (24小時制) - 今日日期：----/--/--</h2>
                 <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="screenshotBtn" class="btn-screenshot" onclick="takeScreenshot()">📸 畫面存檔 (JPG)</button>
                     <button id="audioAuthBtn" class="btn-audio" onclick="enableAudio()">點此：啟用考場音效</button>
                     <button class="btn-clear" onclick="clearSystemMemory()">⚠️ 重設預設考程</button>
                 </div>
@@ -234,6 +255,51 @@
             renderLessons();
             updateSystem();
             setInterval(updateSystem, 1000);
+        }
+
+        // 📸 畫面存檔功能 (產生 class_yyyymmdd.jpg)
+        function takeScreenshot() {
+            const captureElement = document.getElementById('captureArea');
+            
+            // 取得點擊當下的系統日期
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const fileName = `class_${yyyy}${mm}${dd}.jpg`; // 嚴格符合格式要求
+
+            // 隱藏不需要出現在截圖中的動態控制按鈕 (優化截圖美觀)
+            const btnScreenshot = document.getElementById('screenshotBtn');
+            const btnAudio = document.getElementById('audioAuthBtn');
+            const actionInputs = document.querySelectorAll('.btn-del, .btn-add, .btn-clear');
+            
+            btnScreenshot.style.visibility = 'hidden';
+            btnAudio.style.visibility = 'hidden';
+            actionInputs.forEach(el => el.style.visibility = 'hidden');
+
+            // 執行渲染轉換
+            html2canvas(captureElement, {
+                scale: 2,          // 雙倍清晰度渲染，防文字模糊
+                useCORS: true,     
+                backgroundColor: '#f4f6f9' 
+            }).then(canvas => {
+                // 還原網頁按鈕顯示
+                btnScreenshot.style.visibility = 'visible';
+                btnAudio.style.visibility = 'visible';
+                actionInputs.forEach(el => el.style.visibility = 'visible');
+
+                // 轉存為 JPG 並啟動下載流程
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = canvas.toDataURL('image/jpeg', 0.9); // 設定品質 90%
+                link.click();
+            }).catch(err => {
+                // 防呆還原
+                btnScreenshot.style.visibility = 'visible';
+                btnAudio.style.visibility = 'visible';
+                actionInputs.forEach(el => el.style.visibility = 'visible');
+                alert('畫面存檔失敗，請確認瀏覽器支援狀況：' + err);
+            });
         }
 
         function clearSystemMemory() {
@@ -447,7 +513,7 @@
                 const startTime = timeToDate(nextLesson.start);
                 const diffSec = Math.ceil((startTime - now) / 1000);
 
-                statusTextEl.innerText = `☕ 距離下節 ${nextLesson.name} 還有`;
+                statusTextEl.innerText = `☕ 考場休息（距離 ${nextLesson.name} 還有）`;
                 statusTextEl.style.color = "var(--active-blue)";
                 timerEl.innerText = formatTimeLeft(diffSec);
                 timerEl.className = "timer-display";

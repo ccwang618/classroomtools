@@ -2,8 +2,9 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>智慧教室上課時程系統 - 七節完整版</title>
+    <title>智慧教室上課時程系統 - 七節完整版 (背景更新版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --bg-color: #f0f4f8;
@@ -61,15 +62,15 @@
         #lessonBody tr { height: 50px; box-sizing: border-box; }
         td { padding: 3px 5px; border-bottom: 1px solid #eee; text-align: center; font-size: 0.95rem; }
         
-        /* 欄位寬度比例 */
-        .col-name { width: 150px; }
-        .col-time { width: 85px; }
-        .col-alert { width: 85px; }
-        .col-num { width: 80px; }
-        .col-num { width: 80px; }
-        .col-note { width: 160px; }
-        .col-status { width: 90px; }
-        .col-action { width: 60px; }
+        /* 欄位寬度比例調整 */
+        .col-period { width: 60px; }    /* 縮短：節次 */
+        .col-subject { width: 100px; }  /* 縮短：科目名稱 */
+        .col-time { width: 85px; }      /* 保持原樣 */
+        .col-alert { width: 75px; }     /* 縮短：提醒(分) */
+        .col-num { width: 70px; }       /* 縮短：應到/實到人數 */
+        .col-note { width: 235px; }     /* 增加：備註 / 缺席座號 */
+        .col-status { width: 90px; }    /* 保持原樣 */
+        .col-action { width: 60px; }    /* 保持原樣 */
 
         input[type="text"], input[type="number"], select {
             width: 95%;
@@ -132,6 +133,12 @@
         .timer-section-right {
             flex: 1;
             text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .datetime-item {
             font-size: 1.2rem;
             color: #486581;
             font-weight: bold;
@@ -153,8 +160,65 @@
         .btn-audio { background: #ff9800; color: white; animation: pulse 2s infinite; }
         .btn-audio.active { background: #4caf50; animation: none; }
         .btn-clear { background: #d32f2f; color: white; font-size: 0.85rem; padding: 6px 12px; }
-        .btn-screenshot { background: #009688; color: white; } /* 新增存檔按鈕樣式 */
+        .btn-screenshot { background: #009688; color: white; } 
+        .btn-xlsx { background: #188038; color: white; position: relative; }
 
+        /* 背景微提示樣式 */
+        .toast-notification {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: #102a43;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            font-size: 0.95rem;
+            font-weight: bold;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            animation: slideUp 0.3s ease;
+        }
+
+        /* 統一遮罩彈出框用於確認 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(16, 42, 67, 0.65);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 16px;
+            width: 420px;
+            max-width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            box-sizing: border-box;
+            animation: fadeIn 0.25s ease-out;
+        }
+        .modal-title { margin-top: 0; color: var(--primary-color); font-size: 1.3rem; margin-bottom: 12px; font-weight: bold; }
+        .modal-text { font-size: 0.95rem; color: #486581; margin-bottom: 20px; line-height: 1.5; }
+        .modal-btn-group { display: flex; gap: 10px; justify-content: center; }
+        .modal-btn { padding: 10px 20px; font-size: 0.95rem; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-confirm { background: var(--active-blue); color: white; }
+        .btn-cancel { background: #cbd5e1; color: var(--primary-color); }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
         @keyframes blink { 50% { opacity: 0.5; } }
         @keyframes pulse { 50% { opacity: 0.8; } }
     </style>
@@ -172,7 +236,8 @@
                     <div id="timer" class="timer-display">00:00:00</div>
                 </div>
                 <div class="timer-section-right">
-                    現在時間：<span id="clock">00:00:00</span>
+                    <div class="datetime-item">現在日期：<span id="date">0000/00/00</span></div>
+                    <div class="datetime-item">現在時間：<span id="clock">00:00:00</span></div>
                 </div>
             </div>
         </div>
@@ -180,15 +245,17 @@
         <div class="card" style="height: 80%;">
             <div class="header-box">
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <h2 id="systemTitle">智慧教室_課表系統</h2>
+                    <h2 id="systemTitle">智慧教室課表系統</h2>
                     <select id="dayOfWeekSelect" class="day-select" onchange="switchDay()">
-                        <option value="1">星期一 (wy)</option>
-                        <option value="2">星期二 (wy)</option>
-                        <option value="4">星期內 (st)</option>
-                        <option value="5">星期五 (jn)</option>
+                        <option value="1">星期一_wy</option>
+                        <option value="2">星期二_wy</option>
+                        <option value="4">星期四_st</option>
+                        <option value="5">星期五_jn</option>
                     </select>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
+                    <!-- 背景靜態更新按鈕 -->
+                    <button class="btn-xlsx" onclick="triggerExcelBackgroundUpdate()">📗 更新至Excel</button>
                     <button id="screenshotBtn" class="btn-screenshot" onclick="takeScreenshot()">📸 畫面存檔 (JPG)</button>
                     <button id="audioAuthBtn" class="btn-audio" onclick="enableAudio()">點此：啟用音效功能</button>
                     <button class="btn-clear" onclick="clearCurrentDayMemory()">⚠️ 重設當日課表</button>
@@ -201,7 +268,8 @@
                 <table>
                     <thead>
                         <tr>
-                            <th class="col-name">節次與科目名稱</th>
+                            <th class="col-period">節次</th>
+                            <th class="col-subject">科目名稱</th>
                             <th class="col-time">開始時間</th>
                             <th class="col-time">結束時間</th>
                             <th class="col-alert">提醒(分)</th>
@@ -219,44 +287,61 @@
         </div>
     </div>
 
+    <!-- 隱藏的背景 Excel 檔案讀取器 -->
+    <input type="file" id="bgExcelFileInput" accept=".xlsx" style="display: none;" onchange="handleExcelBackgroundImport(event)">
+
+    <!-- 背景提示通知 (Toast) -->
+    <div id="toastNotification" class="toast-notification"></div>
+
+    <!-- 自訂確認視窗 -->
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="modal-title" id="modalTitle">確認執行</h3>
+            <p class="modal-text" id="modalText"></p>
+            <div class="modal-btn-group">
+                <button class="modal-btn btn-confirm" id="modalConfirmBtn">確定</button>
+                <button class="modal-btn btn-cancel" onclick="closeConfirmModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // 預設四天份完整課表資料
         const defaultLessonsByDay = {
             "1": [
-                { name: '第一節：自修(wy)', start: '08:30', end: '09:15', alertBefore: 5, totalNum: 20, presentNum: 20, note: '' },
-                { name: '第二節：生科_901(wy)', start: '09:25', end: '10:10', alertBefore: 5, totalNum: 18, presentNum: 18, note: '' },
-                { name: '第三節：生科_701(wy)', start: '10:20', end: '11:05', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
-                { name: '第四節：生科_802(wy)', start: '11:15', end: '12:00', alertBefore: 5, totalNum: 23, presentNum: 23, note: '' },
-                { name: '第五節：自修(wy)', start: '13:00', end: '13:45', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
-                { name: '第六節：自修(wy)', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
-                { name: '第七節：自修(wy)', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' }
+                { period: '第一節', subject: '自修(wy)', start: '08:30', end: '09:15', alertBefore: 5, totalNum: 0, presentNum: 0, note: '' },
+                { period: '第二節', subject: 'wy901_生科', start: '09:25', end: '10:10', alertBefore: 5, totalNum: 18, presentNum: 18, note: '' },
+                { period: '第三節', subject: 'wy701_生科', start: '10:20', end: '11:05', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
+                { period: '第四節', subject: 'wy802_生科', start: '11:15', end: '12:00', alertBefore: 5, totalNum: 23, presentNum: 23, note: '' },
+                { period: '第五節', subject: '自修', start: '13:00', end: '13:45', alertBefore: 5, totalNum: 0, presentNum: 0, note: '' },
+                { period: '第六節', subject: '自修', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 0, presentNum: 0, note: '' },
+                { period: '第七節', subject: '自修', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 0, presentNum: 0, note: '' }
             ],
             "2": [
-                { name: '第一節：生科_702(wy)', start: '08:30', end: '09:15', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
-                { name: '第二節：生科_801(wy)', start: '09:25', end: '10:10', alertBefore: 5, totalNum: 23, presentNum: 23, note: '' },
-                { name: '第三節：自修(wy)', start: '10:20', end: '11:05', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
-                { name: '第四節：生科_902(wy)', start: '11:15', end: '12:00', alertBefore: 5, totalNum: 19, presentNum: 19, note: '' },
-                { name: '第五節：自修(wy)', start: '13:00', end: '13:45', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
-                { name: '第六節：自修(wy)', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
-                { name: '第七節：自修(wy)', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' }
+                { period: '第一節', subject: 'wy702_生科', start: '08:30', end: '09:15', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
+                { period: '第二節', subject: 'wy801_生科', start: '09:25', end: '10:10', alertBefore: 5, totalNum: 23, presentNum: 23, note: '' },
+                { period: '第三節', subject: '自修', start: '10:20', end: '11:05', alertBefore: 5, totalNum: 0, presentNum: 0, note: '' },
+                { period: '第四節', subject: 'wy902_生科', start: '11:15', end: '12:00', alertBefore: 5, totalNum: 19, presentNum: 19, note: '' },
+                { period: '第五節', subject: '自修', start: '13:00', end: '13:45', alertBefore: 5, totalNum: 0, presentNum: 0, note: '' },
+                { period: '第六節', subject: '自修', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 0, presentNum: 0, note: '' },
+                { period: '第七節', subject: '自修', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 0, presentNum: 0, note: '' }
             ],
             "4": [
-                { name: '第一節：資科_8甲(st)', start: '08:25', end: '09:10', alertBefore: 5, totalNum: 14, presentNum: 14, note: '' },
-                { name: '第二節：資科_9甲(st)', start: '09:20', end: '10:05', alertBefore: 5, totalNum: 7, presentNum: 7, note: '' },
-                { name: '第三節：生科_9甲(st)', start: '10:15', end: '11:00', alertBefore: 5, totalNum: 7, presentNum: 7, note: '' },
-                { name: '第四節：資科_7甲(st)', start: '11:10', end: '11:55', alertBefore: 5, totalNum: 3, presentNum: 3, note: '' },
-                { name: '第五節：生科_8甲(st)', start: '13:00', end: '13:45', alertBefore: 5, totalNum: 14, presentNum: 14, note: '' },
-                { name: '第六節：生科_7甲(st)', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 3, presentNum: 3, note: '' },
-                { name: '第七節：自修', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 14, presentNum: 14, note: '' }
+                { period: '第一節', subject: 'st8甲_資科', start: '08:25', end: '09:10', alertBefore: 5, totalNum: 14, presentNum: 14, note: '' },
+                { period: '第二節', subject: 'st9甲_資科', start: '09:20', end: '10:05', alertBefore: 5, totalNum: 7, presentNum: 7, note: '' },
+                { period: '第三節', subject: 'st9甲_生科', start: '10:15', end: '11:00', alertBefore: 5, totalNum: 7, presentNum: 7, note: '' },
+                { period: '第四節', subject: 'st7甲_資科', start: '11:10', end: '11:55', alertBefore: 5, totalNum: 3, presentNum: 3, note: '' },
+                { period: '第五節', subject: 'st8甲_生科', start: '13:00', end: '13:45', alertBefore: 5, totalNum: 14, presentNum: 14, note: '' },
+                { period: '第六節', subject: 'st7甲_生科', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 3, presentNum: 3, note: '' },
+                { period: '第七節', subject: '自修', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 0, presentNum: 0, note: '' }
             ],
             "5": [
-                { name: '第一節：生科_711(jn)', start: '08:25', end: '09:10', alertBefore: 5, totalNum: 29, presentNum: 29, note: '' },
-                { name: '第二節：生科_712(jn)', start: '09:20', end: '10:05', alertBefore: 5, totalNum: 28, presentNum: 28, note: '' },
-                { name: '第三節：生科_710(jn)', start: '10:15', end: '11:00', alertBefore: 5, totalNum: 29, presentNum: 29, note: '' },
-                { name: '第四節：自修', start: '11:10', end: '11:55', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
-                { name: '第五節：自修', start: '13:00', end: '13:45', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
-                { name: '第六節：自修', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 22, presentNum: 22, note: '' },
-                { name: '第七節：生科_713(jn)', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 28, presentNum: 28, note: '' }
+                { period: '第一節', subject: 'jn711_生科', start: '08:25', end: '09:10', alertBefore: 5, totalNum: 28, presentNum: 28, note: '' },
+                { period: '第二節', subject: 'jn712_生科', start: '09:20', end: '10:05', alertBefore: 5, totalNum: 28, presentNum: 28, note: '' },
+                { period: '第三節', subject: 'jn710_生科', start: '10:15', end: '11:00', alertBefore: 5, totalNum: 28, presentNum: 28, note: '' },
+                { period: '第四節', subject: '自修', start: '11:10', end: '11:55', alertBefore: 5, totalNum: 0, presentNum: 0, note: '' },
+                { period: '第五節', subject: '自修', start: '13:00', end: '13:45', alertBefore: 5, totalNum: 0, presentNum: 0, note: '' },
+                { period: '第六節', subject: '自修', start: '13:55', end: '14:40', alertBefore: 5, totalNum: 0, presentNum: 0, note: '' },
+                { period: '第七節', subject: 'jn713_生科', start: '14:55', end: '15:40', alertBefore: 5, totalNum: 28, presentNum: 28, note: '' }
             ]
         };
 
@@ -271,6 +356,32 @@
             loadDayLesson(currentDay);
             setInterval(updateSystem, 500);
         };
+
+        // 自訂無阻擋微提示 (Toast)
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toastNotification');
+            toast.innerText = message;
+            toast.style.display = 'flex';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, duration);
+        }
+
+        // 自訂確認對話盒
+        function showCustomConfirm(title, message, onConfirm) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalText').innerText = message;
+            const confirmBtn = document.getElementById('modalConfirmBtn');
+            confirmBtn.onclick = function() {
+                closeConfirmModal();
+                onConfirm();
+            };
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
 
         function determineToday() {
             const now = new Date();
@@ -289,7 +400,36 @@
             lessons = JSON.parse(localStorage.getItem(storageKey));
             
             if (!lessons || lessons.length === 0) {
-                lessons = JSON.parse(JSON.stringify(defaultLessonsByDay[currentDay]));
+                let defaultData = JSON.parse(JSON.stringify(defaultLessonsByDay[currentDay]));
+                lessons = defaultData.map(l => {
+                    if (l.name && !l.period) {
+                        const splitIdx = l.name.indexOf('：');
+                        if (splitIdx !== -1) {
+                            l.period = l.name.substring(0, splitIdx);
+                            l.subject = l.name.substring(splitIdx + 1);
+                        } else {
+                            l.period = '自訂';
+                            l.subject = l.name;
+                        }
+                        delete l.name;
+                    }
+                    return l;
+                });
+            } else {
+                lessons = lessons.map(l => {
+                    if (l.name && !l.period) {
+                        const splitIdx = l.name.indexOf('：');
+                        if (splitIdx !== -1) {
+                            l.period = l.name.substring(0, splitIdx);
+                            l.subject = l.name.substring(splitIdx + 1);
+                        } else {
+                            l.period = '自訂';
+                            l.subject = l.name;
+                        }
+                        delete l.name;
+                    }
+                    return l;
+                });
             }
             renderTable();
         }
@@ -307,11 +447,12 @@
         }
 
         function clearCurrentDayMemory() {
-            if (confirm(`確定要將 星期${getDayName(currentDay)} 的七節課表回復到最初預設值嗎？`)) {
+            showCustomConfirm('重設當日課表', `確定要將 星期${getDayName(currentDay)} 的七節課表回復到最初預設值嗎？`, () => {
                 const storageKey = `multi_lessons_v7_day_${currentDay}`;
                 localStorage.removeItem(storageKey);
                 loadDayLesson(currentDay);
-            }
+                showToast('課表已回復至預設設定');
+            });
         }
 
         function getDayName(dayStr) {
@@ -330,7 +471,8 @@
                 const absentDisplay = absentCount > 0 ? ` (缺 ${absentCount} 人)` : '';
 
                 tr.innerHTML = `
-                    <td><input type="text" value="${lesson.name}" onchange="updateData(${index}, 'name', this.value)"></td>
+                    <td><input type="text" value="${lesson.period || ''}" onchange="updateData(${index}, 'period', this.value)"></td>
+                    <td><input type="text" value="${lesson.subject || ''}" onchange="updateData(${index}, 'subject', this.value)"></td>
                     <td><input type="text" value="${lesson.start}" onchange="updateData(${index}, 'start', this.value)"></td>
                     <td><input type="text" value="${lesson.end}" onchange="updateData(${index}, 'end', this.value)"></td>
                     <td><input type="number" value="${lesson.alertBefore}" onchange="updateData(${index}, 'alertBefore', parseInt(this.value)||0)"></td>
@@ -362,7 +504,7 @@
         }
 
         function addRow() {
-            lessons.push({ name: '新自訂時段', start: '16:00', end: '16:45', alertBefore: 5, totalNum: 20, presentNum: 20, note: '' });
+            lessons.push({ period: '自訂節次', subject: '新自訂時段', start: '16:00', end: '16:45', alertBefore: 5, totalNum: 20, presentNum: 20, note: '' });
             renderTable();
             saveCurrentDayData();
         }
@@ -373,6 +515,206 @@
             saveCurrentDayData();
         }
 
+        function normalizeSheetName(name) {
+            const invalidChars = /[:\\/?*\[\]]/g;
+            const normalized = String(name || '未命名科目')
+                .replace(invalidChars, '_')
+                .trim()
+                .slice(0, 31);
+            return normalized || '未命名科目';
+        }
+
+        function getSavedLessonsByDay(day) {
+            const storageKey = `multi_lessons_v7_day_${day}`;
+            const savedLessons = JSON.parse(localStorage.getItem(storageKey));
+            if (savedLessons && savedLessons.length > 0) {
+                return savedLessons;
+            }
+            return JSON.parse(JSON.stringify(defaultLessonsByDay[day] || []));
+        }
+
+        function getLessonIdentity(lesson) {
+            if (lesson.subject) {
+                return {
+                    period: lesson.period || '',
+                    subject: lesson.subject.trim()
+                };
+            }
+
+            const legacyName = (lesson.name || '').trim();
+            const splitIdx = legacyName.indexOf('：');
+            if (splitIdx !== -1) {
+                return {
+                    period: legacyName.substring(0, splitIdx),
+                    subject: legacyName.substring(splitIdx + 1).trim()
+                };
+            }
+
+            return {
+                period: lesson.period || '',
+                subject: legacyName
+            };
+        }
+
+        // 動態計算對應星期幾的實際西元日期 (僅輸出 yyyy/mm/dd)
+        function getActualDateString(dayStr) {
+            const targetDay = parseInt(dayStr); 
+            const now = new Date();
+            let currentDay = now.getDay();
+            if (currentDay === 0) currentDay = 7; 
+            
+            const diff = targetDay - currentDay;
+            const targetDate = new Date(now);
+            targetDate.setDate(now.getDate() + diff);
+            
+            const y = targetDate.getFullYear();
+            const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+            const d = String(targetDate.getDate()).padStart(2, '0');
+            
+            return `${y}/${m}/${d}`; 
+        }
+
+        function buildLessonRowsForXlsx() {
+            saveCurrentDayData();
+            const rowsBySubject = {};
+            const dayKeys = Object.keys(defaultLessonsByDay).sort((a, b) => Number(a) - Number(b));
+
+            dayKeys.forEach(day => {
+                const actualDateStr = getActualDateString(day); 
+                
+                getSavedLessonsByDay(day).forEach(lesson => {
+                    const lessonIdentity = getLessonIdentity(lesson);
+                    const subject = lessonIdentity.subject;
+                    if (!subject || subject.includes('自修')) return;
+
+                    const totalNum = parseInt(lesson.totalNum) || 0;
+                    const presentNum = parseInt(lesson.presentNum) || 0;
+                    const absentNum = Math.max(0, totalNum - presentNum);
+                    const sheetName = normalizeSheetName(subject);
+
+                    if (!rowsBySubject[sheetName]) {
+                        rowsBySubject[sheetName] = [];
+                    }
+
+                    rowsBySubject[sheetName].push({
+                        '日期': actualDateStr, 
+                        '節次': lessonIdentity.period,
+                        '科目名稱': subject,
+                        '開始時間': lesson.start || '',
+                        '結束時間': lesson.end || '',
+                        '提醒(分)': parseInt(lesson.alertBefore) || 0,
+                        '應到人數': totalNum,
+                        '實到人數': presentNum,
+                        '缺席人數': absentNum,
+                        '備註 / 缺席座號': lesson.note || ''
+                    });
+                });
+            });
+
+            return rowsBySubject;
+        }
+
+        // 背景更新核心：啟動靜態更新
+        function triggerExcelBackgroundUpdate() {
+            if (typeof XLSX === 'undefined') {
+                showToast('無法載入 XLSX 套件，請確認網路連線。');
+                return;
+            }
+            // 觸發背景檔案選取 (用於追加到既有 update_classroom_note.xlsx 的最後一列)
+            showToast('請選取既有的 update_classroom_note.xlsx 以進行背景追加更新...');
+            document.getElementById('bgExcelFileInput').click();
+        }
+
+        // 背景靜態追加更新處理程序
+        function handleExcelBackgroundImport(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                // 若使用者取消檔案選取，系統背景自動直接下載全新檔案作為替代
+                exportDirectXlsxBackground();
+                return;
+            }
+
+            showToast('系統背景讀取並追加資料中...');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    const rowsBySubject = buildLessonRowsForXlsx();
+                    const sheetNames = Object.keys(rowsBySubject);
+                    
+                    if (sheetNames.length === 0) {
+                        showToast('無可更新的課程資料（自修課已自動略過）。');
+                        return;
+                    }
+
+                    sheetNames.forEach(sheetName => {
+                        let existingRows = [];
+                        
+                        // 若工作表已存在，背景提取其內容
+                        if (workbook.Sheets[sheetName]) {
+                            existingRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+                        }
+                        
+                        // 追加最新課表到資料末端
+                        const newRows = rowsBySubject[sheetName];
+                        existingRows = existingRows.concat(newRows);
+                        
+                        const updatedWorksheet = XLSX.utils.json_to_sheet(existingRows);
+                        updatedWorksheet['!cols'] = [
+                            { wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 10 }, { wch: 10 },
+                            { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 24 }
+                        ];
+                        
+                        if (workbook.Sheets[sheetName]) {
+                            workbook.Sheets[sheetName] = updatedWorksheet;
+                        } else {
+                            XLSX.utils.book_append_sheet(workbook, updatedWorksheet, sheetName);
+                        }
+                    });
+
+                    XLSX.writeFile(workbook, 'update_classroom_note.xlsx');
+                    showToast('✅ 成功背景載入既有 Excel 並追加課表資料至最後一列！');
+                } catch (err) {
+                    console.error("背景追加失敗:", err);
+                    showToast('❌ 讀取失敗，改為直接輸出新 Excel 檔案。');
+                    exportDirectXlsxBackground();
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+            event.target.value = ''; // 重設
+        }
+
+        // 直接匯出全新 Excel 檔案（無對話框打擾）
+        function exportDirectXlsxBackground() {
+            try {
+                const rowsBySubject = buildLessonRowsForXlsx();
+                const sheetNames = Object.keys(rowsBySubject);
+                if (sheetNames.length === 0) {
+                    showToast('目前沒有可更新的課程資料。');
+                    return;
+                }
+
+                const workbook = XLSX.utils.book_new();
+                sheetNames.forEach(sheetName => {
+                    const worksheet = XLSX.utils.json_to_sheet(rowsBySubject[sheetName]);
+                    worksheet['!cols'] = [
+                        { wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 10 }, { wch: 10 },
+                        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 24 }
+                    ];
+                    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+                });
+
+                XLSX.writeFile(workbook, 'update_classroom_note.xlsx');
+                showToast('✅ 已於背景建立並下載全新 Excel 課表檔案！');
+            } catch (err) {
+                console.error(err);
+                showToast('❌ 匯出失敗，請重試。');
+            }
+        }
+
         function enableAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -381,6 +723,7 @@
             const btn = document.getElementById('audioAuthBtn');
             btn.innerText = "🔊 音效功能已啟用";
             btn.className = "btn-audio active";
+            showToast('音效功能已啟用！');
         }
 
         function playBeep(frequency, duration) {
@@ -421,6 +764,11 @@
 
         function updateSystem() {
             const now = new Date();
+            
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            document.getElementById('date').innerText = `${year}/${month}/${date}`;
             document.getElementById('clock').innerText = now.toLocaleTimeString('zh-TW', { hour12: false });
             
             const statusTextEl = document.getElementById('currentStatusText');
@@ -483,7 +831,8 @@
                 const isUrgentPeriod = now >= new Date(end.getTime() - currentLesson.alertBefore * 60 * 1000);
                 const currentMinute = now.getMinutes();
 
-                statusTextEl.innerText = `📖 正在進行：${currentLesson.name}`;
+                const displayName = `${currentLesson.period || ''} ${currentLesson.subject || ''}`.trim();
+                statusTextEl.innerText = `📖 正在進行：${displayName}`;
                 statusTextEl.style.color = isUrgentPeriod ? "var(--accent-color)" : "var(--success-green)";
                 
                 timerEl.innerText = formatTimeLeft(diffSec);
@@ -498,7 +847,7 @@
                     playBeep(800, 0.5);
                     setTimeout(() => playBeep(800, 0.5), 600);
                     setTimeout(() => playBeep(800, 0.8), 1200);
-                    alert(`${currentLesson.name} 時間到！`);
+                    showToast(`${displayName} 時間到！`);
                 }
 
             } else if (nextLessonIndex !== -1) {
@@ -506,7 +855,8 @@
                 const startTime = timeToDate(nextLesson.start);
                 const diffSec = Math.ceil((startTime - now) / 1000);
 
-                statusTextEl.innerText = `☕ 下堂預告（距離 ${nextLesson.name} 還有）`;
+                const nextDisplayName = `${nextLesson.period || ''} ${nextLesson.subject || ''}`.trim();
+                statusTextEl.innerText = `☕ 下堂預告（距離 ${nextDisplayName} 還有）`;
                 statusTextEl.style.color = "var(--active-blue)";
                 timerEl.innerText = formatTimeLeft(diffSec);
                 timerEl.className = "timer-display";
@@ -521,7 +871,6 @@
             }
         }
 
-        // 核心功能：畫面存檔 (截圖)
         function takeScreenshot() {
             const now = new Date();
             const year = now.getFullYear();
@@ -529,25 +878,23 @@
             const date = String(now.getDate()).padStart(2, '0');
             const filename = `class_${year}${month}${date}.jpg`;
 
-            // 設定要擷取的範圍為整個網頁 body
             const element = document.body;
 
             html2canvas(element, {
                 useCORS: true,
-                scale: 2, // 提高解析度至2倍，確保匯出照片文字清晰
-                backgroundColor: "#f0f4f8" // 設定存檔圖片的背景顏色
+                scale: 2, 
+                backgroundColor: "#f0f4f8" 
             }).then(canvas => {
-                // 將 Canvas 轉換為 JPEG 格式格式，品質設定為 0.9
                 const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
                 
-                // 虛擬點擊下載連結
                 const link = document.createElement('a');
                 link.download = filename;
                 link.href = dataUrl;
                 link.click();
+                showToast('📸 畫面存檔成功！');
             }).catch(err => {
                 console.error("網頁擷取失敗:", err);
-                alert("畫面存檔失敗，請確認您的瀏覽器支援 Canvas 或並未封鎖腳本。");
+                showToast("❌ 畫面存檔失敗。");
             });
         }
     </script>
